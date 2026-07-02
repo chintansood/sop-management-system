@@ -1,0 +1,330 @@
+// ─────────────────────────────────────────────────────────────────────────
+// SOP Learning & Assessment Management System — Prisma Schema
+// Mirrors Section 4 (Database Schema Design) of the architecture document.
+// ─────────────────────────────────────────────────────────────────────────
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+
+datasource db {
+  provider = "postgresql"
+}
+// ─────────────────────────────────────────────────────────────────────────
+// ENUMS
+// ─────────────────────────────────────────────────────────────────────────
+
+enum UserRole {
+  SUPER_ADMIN
+  ADMIN
+  DEPT_HEAD
+  TEACHING_STAFF
+  NON_TEACHING_STAFF
+}
+
+enum StaffType {
+  TEACHING
+  NON_TEACHING
+}
+
+enum ApplicableTo {
+  ALL
+  TEACHING
+  NON_TEACHING
+  SPECIFIC_DEPARTMENTS
+}
+
+enum SOPVersionStatus {
+  DRAFT
+  QUESTIONS_GENERATED
+  QUESTIONS_APPROVED
+  ACTIVE
+  ARCHIVED
+}
+
+enum QuestionDifficulty {
+  EASY
+  MEDIUM
+  HARD
+}
+
+enum QuestionSource {
+  AI_GENERATED
+  MANUAL
+  AI_EDITED
+}
+
+enum QuestionStatus {
+  DRAFT
+  APPROVED
+  REJECTED
+}
+
+enum AssignmentStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  PASSED
+  FAILED
+  OVERDUE
+  STALE
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// USERS & DEPARTMENTS
+// ─────────────────────────────────────────────────────────────────────────
+
+model User {
+  id           String   @id @default(uuid())
+  fullName     String
+  email        String   @unique
+  passwordHash String
+  role         UserRole
+  staffType    StaffType?
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  departmentId String?
+  department   Department? @relation("DepartmentMembers", fields: [departmentId], references: [id])
+
+  // Back-relation: lets us query "what department does this user head"
+  // starting from a User record. No fields/references here because
+  // Department.headUser (below) is the side that owns the FK column.
+  headOfDepartment Department? @relation("DepartmentHead")
+
+  // Reverse relations — these don't add columns, they let Prisma's query
+  // engine traverse from a User to everything connected to them.
+  uploadedSOPVersions SOPVersion[]      @relation("UploadedBy")
+  createdSOPs         SOP[]            @relation("CreatedBy")
+  assignmentsReceived Assignment[]      @relation("AssignedToUser")
+  assignmentsMade      Assignment[]     @relation("AssignedByUser")
+  learningProgress    LearningProgress[]
+  auditLogs           AuditLog[]
+  notifications       Notification[]
+
+  @@index([departmentId])
+  @@index([role])
+}
+
+model Department {
+  id   String @id @default(uuid())
+  name String @unique
+
+  headUserId String? @unique
+  headUser   User?   @relation("DepartmentHead", fields: [headUserId], references: [id])
+
+  members User[] @relation("DepartmentMembers")
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// SOP & VERSIONING
+// ─────────────────────────────────────────────────────────────────────────
+
+model SOP {
+  id              String       @id @default(uuid())
+  title           String
+  category        String
+  applicableTo    ApplicableTo @default(ALL)
+  isPublished     Boolean      @default(false)
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  createdById String
+  createdBy   User   @relation("CreatedBy", fields: [createdById], references: [id])
+
+  // Points to whichever SOPVersion is currently "live." Nullable because
+  // a brand-new SOP might exist with versions still in DRAFT, with none
+  // active yet.
+  activeVersionId String?     @unique
+  activeVersion   SOPVersion? @relation("ActiveVersion", fields: [activeVersionId], references: [id])
+
+  versions    SOPVersion[] @relation("SOPVersions")
+  assignments Assignment[]
+
+  @@index([category])
+}
+
+model SOPVersion {
+  id            String           @id @default(uuid())
+  versionNumber Int
+  fileUrl       String
+  extractedText String?          @db.Text
+  status        SOPVersionStatus @default(DRAFT)
+  createdAt     DateTime         @default(now())
+
+  sopId String
+  sop   SOP    @relation("SOPVersions", fields: [sopId], references: [id])
+
+  uploadedById String
+  uploadedBy   User   @relation("UploadedBy", fields: [uploadedById], references: [id])
+
+  // The reverse side of SOP.activeVersion — lets Prisma know these two
+  // models are related from both directions.
+  activeForSOP SOP? @relation("ActiveVersion")
+
+  questions   Question[]
+  assignments Assignment[]
+  learningProgress LearningProgress[]
+
+  @@unique([sopId, versionNumber])
+  @@index([sopId])
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// QUESTIONS
+// ─────────────────────────────────────────────────────────────────────────
+
+model Question {
+  id           String             @id @default(uuid())
+  text         String             @db.Text
+  difficulty   QuestionDifficulty
+  source       QuestionSource
+  status       QuestionStatus     @default(DRAFT)
+  explanation  String?            @db.Text
+  createdAt    DateTime           @default(now())
+
+  sopVersionId String
+  sopVersion   SOPVersion @relation(fields: [sopVersionId], references: [id])
+
+  options AttemptOption[] @relation("QuestionOptions")
+
+  @@index([sopVersionId, status])
+}
+
+// Note: named AttemptOption to avoid clashing conceptually with the
+// AttemptAnswer model below — this represents the 4 possible options
+// belonging to a Question, NOT the answer a staff member selected.
+model AttemptOption {
+  id        String  @id @default(uuid())
+  text      String
+  isCorrect Boolean @default(false)
+
+  questionId String
+  question   Question @relation("QuestionOptions", fields: [questionId], references: [id])
+
+  selectedInAnswers AttemptAnswer[]
+
+  @@index([questionId])
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// ASSIGNMENTS
+// ─────────────────────────────────────────────────────────────────────────
+
+model Assignment {
+  id        String           @id @default(uuid())
+  dueDate   DateTime?
+  status    AssignmentStatus @default(NOT_STARTED)
+  createdAt DateTime         @default(now())
+
+  userId String
+  user   User   @relation("AssignedToUser", fields: [userId], references: [id])
+
+  sopId String
+  sop   SOP    @relation(fields: [sopId], references: [id])
+
+  sopVersionId String
+  sopVersion   SOPVersion @relation(fields: [sopVersionId], references: [id])
+
+  assignedById String
+  assignedBy   User   @relation("AssignedByUser", fields: [assignedById], references: [id])
+
+  attempts Attempt[]
+
+  @@index([userId, status])
+  @@index([sopId])
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// ATTEMPTS
+// ─────────────────────────────────────────────────────────────────────────
+
+model Attempt {
+  id                String    @id @default(uuid())
+  // Frozen copy of the exact questions/options shown to the user.
+  // This is the audit-integrity anchor described in the architecture doc:
+  // even if Question rows change later, this JSON never does.
+  questionSnapshot  Json
+  startedAt         DateTime  @default(now())
+  submittedAt       DateTime?
+  score             Decimal?  @db.Decimal(5, 2)
+  passed            Boolean?
+  attemptNumber     Int
+
+  assignmentId String
+  assignment   Assignment @relation(fields: [assignmentId], references: [id])
+
+  answers AttemptAnswer[]
+
+  @@index([assignmentId])
+}
+
+model AttemptAnswer {
+  id         String   @id @default(uuid())
+  isCorrect  Boolean
+
+  attemptId String
+  attempt   Attempt @relation(fields: [attemptId], references: [id])
+
+  questionId String
+  // Note: deliberately not relating directly to Question by FK alone for
+  // scoring purposes — the questionSnapshot on Attempt is the source of
+  // truth for "what was asked." This FK exists for convenience navigation
+  // back to the live Question record (e.g. for admin analytics).
+
+  selectedOptionId String
+  selectedOption   AttemptOption @relation(fields: [selectedOptionId], references: [id])
+
+  @@index([attemptId])
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// LEARNING PROGRESS
+// ─────────────────────────────────────────────────────────────────────────
+
+model LearningProgress {
+  id          String    @id @default(uuid())
+  openedAt    DateTime?
+  completedAt DateTime?
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  sopVersionId String
+  sopVersion   SOPVersion @relation(fields: [sopVersionId], references: [id])
+
+  @@unique([userId, sopVersionId])
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// AUDIT LOG & NOTIFICATIONS
+// ─────────────────────────────────────────────────────────────────────────
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  action     String
+  entityType String
+  entityId   String
+  metadata   Json?
+  createdAt  DateTime @default(now())
+
+  actorId String
+  actor   User   @relation(fields: [actorId], references: [id])
+
+  @@index([entityType, entityId])
+  @@index([actorId])
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  type      String
+  payload   Json
+  readAt    DateTime?
+  createdAt DateTime @default(now())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  @@index([userId, readAt])
+}
