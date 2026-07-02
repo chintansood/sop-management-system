@@ -15,12 +15,7 @@ import path from "path";
  *   - If you add PPTX or TXT support later, you add it here only
  *   - The quality-check logic (is this too short to be real text?)
  *     lives in one place, not scattered through the AI pipeline
- * ─────────────────────────────────────────────────────────────────────────
- */
-
-// ---------------------------------------------------------------------------
-// Extraction result types
-// ---------------------------------------------------------------------------
+*/
 
 export interface ExtractionSuccess {
   ok: true;

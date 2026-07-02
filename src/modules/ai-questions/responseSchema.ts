@@ -1,20 +1,6 @@
 import { z } from "zod";
 
-/**
- * ─────────────────────────────────────────────────────────────────────────
- * You already built a version of this in the standalone AI module.
- * This is the same concept, now living inside the real project and
- * integrated with your actual Prisma enums.
- *
- * Two-layer validation (same as before):
- *   Layer 1 — Zod schema: shape, types, ranges
- *   Layer 2 — content checks: business rules Zod can't express
- * ─────────────────────────────────────────────────────────────────────────
- */
 
-// ---------------------------------------------------------------------------
-// Layer 1: Zod schema
-// ---------------------------------------------------------------------------
 
 export const AIQuestionSchema = z.object({
   questionText: z
@@ -47,9 +33,7 @@ export const AIResponseSchema = z.object({
 export type AIQuestion = z.infer<typeof AIQuestionSchema>;
 export type AIResponse = z.infer<typeof AIResponseSchema>;
 
-// ---------------------------------------------------------------------------
-// Layer 2: Content checks
-// ---------------------------------------------------------------------------
+
 
 export interface ContentIssue {
   questionIndex: number;
@@ -69,9 +53,7 @@ function runContentChecks(questions: AIQuestion[]): ContentIssue[] {
       });
     }
 
-    // Check 2: correct answer isn't suspiciously shorter than distractors
-    // (a known AI pattern where the model writes a terse correct answer
-    // and verbose wrong ones, making it guessable without reading the SOP)
+    
    const correctText = q.options[q.correctOptionIndex] ?? "";
     const otherTexts = q.options.filter((_, i) => i !== q.correctOptionIndex);
     const avgOtherLength = otherTexts.reduce((s, o) => s + o.length, 0) / 3;

@@ -5,23 +5,21 @@ import { buildSystemInstruction, buildUserPrompt } from "./promptBuilder";
 import { validateAIResponse, AIQuestion } from "./responseSchema";
 
 /**
- * ─────────────────────────────────────────────────────────────────────────
- * THE ORCHESTRATOR
- * ─────────────────────────────────────────────────────────────────────────
- * This file ties together every piece we've built:
- *
- *   1. Get the SOP version from DB (has fileUrl and maybe cached text)
- *   2. Extract text from the file (if not already cached)
- *   3. Cache the extracted text on the SOPVersion row
- *   4. Build the prompt
- *   5. Call Gemini API
- *   6. Validate the response (Zod + content checks)
- *   7. Retry once if validation fails
- *   8. Save valid questions as DRAFT rows in the DB
- *   9. Return the saved questions to the caller (controller)
- *
- * Nothing else in the app calls Gemini directly — only this file.
- * ─────────────────────────────────────────────────────────────────────────
+ 
+ This file ties together every piece we've built:
+ 
+   1. Get the SOP version from DB (has fileUrl and maybe cached text)
+   2. Extract text from the file (if not already cached)
+   3. Cache the extracted text on the SOPVersion row
+   4. Build the prompt
+   5. Call Gemini API
+   6. Validate the response (Zod + content checks)
+    7. Retry once if validation fails
+   8. Save valid questions as DRAFT rows in the DB
+    9. Return the saved questions to the caller (controller)
+ 
+  Nothing else in the app calls Gemini directly — only this file.
+ 
  */
 
 if (!process.env.GEMINI_API_KEY) {

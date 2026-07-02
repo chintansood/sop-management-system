@@ -13,14 +13,6 @@ import {
 } from "./auth.service";
 import { prisma } from "../../lib/db";
 
-/**
- * Express 5 note: these are plain async functions with NO try/catch.
- * If login() throws (InvalidCredentialsError, or a Prisma error, or
- * anything else), Express 5 automatically forwards it to the error
- * handling middleware (registered centrally in app.ts) — we don't need
- * to call next(err) manually here. That middleware is what actually
- * decides "InvalidCredentialsError -> 401" vs "everything else -> 500".
- */
 
 export async function loginHandler(req: Request, res: Response) {
   const parsed = LoginSchema.safeParse(req.body);

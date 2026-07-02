@@ -3,21 +3,7 @@ import jwt from "jsonwebtoken";
 import { User } from "@prisma/client";
 import { prisma } from "../../lib/db";
 
-/**
- * ─────────────────────────────────────────────────────────────────────────
- * WHY ACCESS TOKEN AND REFRESH TOKEN ARE SEPARATE
- * ─────────────────────────────────────────────────────────────────────────
- * Access token: short-lived (15 min). Sent with every API request. If it
- * leaks (e.g. via a logged URL or browser extension bug), the damage
- * window is small because it expires quickly.
- *
- * Refresh token: long-lived (7 days). Used ONLY to get a new access
- * token when the old one expires — never sent to ordinary API routes.
- * This is what lets a user stay "logged in" for days without re-entering
- * their password, while still keeping the token that's actually exposed
- * on every request short-lived.
- * ─────────────────────────────────────────────────────────────────────────
- */
+
 
 const ACCESS_TOKEN_SECRET = process.env.JWT_ACCESS_SECRET as string;
 const REFRESH_TOKEN_SECRET = process.env.JWT_REFRESH_SECRET as string;
@@ -42,9 +28,6 @@ export interface TokenPayload {
   role: string;
 }
 
-// ---------------------------------------------------------------------------
-// Password hashing
-// ---------------------------------------------------------------------------
 
 export async function hashPassword(plainPassword: string): Promise<string> {
   const SALT_ROUNDS = 10;
@@ -74,12 +57,6 @@ export function issueRefreshToken(payload: TokenPayload): string {
   });
 }
 
-// ---------------------------------------------------------------------------
-// Token verification
-// ---------------------------------------------------------------------------
-// These throw on invalid/expired tokens (jwt.verify's native behavior) —
-// the middleware that calls these is responsible for catching that and
-// turning it into a 401 response, not these functions themselves.
 
 export function verifyAccessToken(token: string): TokenPayload {
   return jwt.verify(token, ACCESS_TOKEN_SECRET) as TokenPayload;
@@ -119,10 +96,7 @@ export async function login(
 ): Promise<LoginResult> {
   const user = await prisma.user.findUnique({ where: { email } });
 
-  // Deliberately the SAME error message whether the email doesn't exist
-  // OR the password is wrong. Telling an attacker "that email isn't
-  // registered" vs "wrong password" leaks which emails are valid
-  // accounts — a real, well-known security mistake to avoid.
+
   if (!user) {
     throw new InvalidCredentialsError();
   }
@@ -155,13 +129,10 @@ export async function login(
 // ---------------------------------------------------------------------------
 
 export async function refreshAccessToken(refreshToken: string): Promise<string> {
-  // If the token is invalid/expired, verifyRefreshToken throws —
-  // the controller layer turns that into a 401.
+
   const payload = verifyRefreshToken(refreshToken);
 
-  // Re-check the user still exists and is still active. Without this,
-  // a 7-day-old refresh token would keep working even after an admin
-  // disables the account — a real gap if skipped.
+
   const user = await prisma.user.findUnique({ where: { id: payload.userId } });
   if (!user || !user.isActive) {
     throw new InvalidCredentialsError();

@@ -1,18 +1,4 @@
-/**
- * ─────────────────────────────────────────────────────────────────────────
- * WHY PROMPTS ARE BUILT IN A SEPARATE FILE
- * ─────────────────────────────────────────────────────────────────────────
- * Prompt engineering is iterative — you will change the wording, tweak
- * the difficulty split, or adjust the output schema multiple times before
- * the questions feel right. If the prompt lived inside ai.service.ts,
- * every tweak would require you to navigate through orchestration code.
- *
- * This file is purely a string factory: it takes SOP metadata + text
- * and returns exactly what Gemini will receive. No side effects, no DB
- * calls, no API calls — just a function that builds a string.
- * That makes it trivially testable: call it with any input, check the output.
- * ─────────────────────────────────────────────────────────────────────────
- */
+
 
 export interface PromptInput {
   sopTitle: string;
@@ -21,11 +7,7 @@ export interface PromptInput {
   questionCount: number;
 }
 
-/**
- * Builds the system instruction sent to Gemini.
- * This is the persistent "who you are and what you must do" context
- * that applies regardless of which SOP we're generating for.
- */
+
 export function buildSystemInstruction(): string {
   return `You are an assessment-question generator for a school's internal compliance training system.
 Your only job is to write multiple-choice questions that test whether a staff member has understood a specific Standard Operating Procedure (SOP) document.
