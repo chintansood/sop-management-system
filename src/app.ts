@@ -9,6 +9,15 @@ import reportRoutes from "./modules/reports/reports.routes";
 
 const app = express();
 const PORT = 3000;
+import cors from "cors"
+
+// add right after const app = express()
+app.use(cors({
+  origin: ["http://localhost:3001", "http://localhost:3002"],
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+}))
 
 app.use(express.json());
 

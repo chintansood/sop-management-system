@@ -12,6 +12,9 @@ const router = Router();
 
 router.post("/login", loginHandler);
 router.post("/refresh", refreshHandler);
+import { getAllUsersHandler } from "./auth.controller"
+
+router.get("/users", authenticate, authorize("SUPER_ADMIN", "ADMIN"), getAllUsersHandler)
 
 
 router.post(

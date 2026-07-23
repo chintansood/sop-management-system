@@ -111,3 +111,19 @@ export async function logoutHandler(req: Request, res: Response) {
   // not needed for the MVP per your architecture doc.
   return res.status(200).json({ message: "Logged out" });
 }
+// GET /api/v1/auth/users — list all users (admin only)
+export async function getAllUsersHandler(req: Request, res: Response) {
+  const users = await prisma.user.findMany({
+    select: {
+      id:        true,
+      fullName:  true,
+      email:     true,
+      role:      true,
+      isActive:  true,
+      createdAt: true,
+      department: { select: { name: true } },
+    },
+    orderBy: { fullName: "asc" },
+  })
+  return res.status(200).json({ users })
+}

@@ -38,7 +38,10 @@ router.post(
   sopUpload.single("document"),
   uploadSOPHandler
 );
+import { getAllSOPsHandler } from "./sop.controller"
 
+// Add before other routes
+router.get("/", authenticate, authorize("ADMIN", "SUPER_ADMIN", "DEPT_HEAD"), getAllSOPsHandler);
 // Upload a new version of an existing SOP
 router.post(
   "/:sopId/versions",

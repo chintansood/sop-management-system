@@ -342,3 +342,32 @@ export async function getStaleAssignmentsHandler(req: Request, res: Response) {
     throw err;
   }
 }
+// GET /api/v1/sops — list all SOPs
+export async function getAllSOPsHandler(req: Request, res: Response) {
+  const sops = await prisma.sOP.findMany({
+    include: {
+      activeVersion: {
+        select: {
+          id:            true,
+          versionNumber: true,
+          status:        true,
+        },
+      },
+      _count: {
+        select: { versions: true },
+      },
+    },
+    orderBy: { createdAt: "desc" },
+  });
+
+  return res.status(200).json({
+    sops: sops.map(s => ({
+      id:            s.id,
+      title:         s.title,
+      category:      s.category,
+      activeVersion: s.activeVersion,
+      versionCount:  s._count.versions,
+      createdAt:     s.createdAt,
+    })),
+  });
+}
