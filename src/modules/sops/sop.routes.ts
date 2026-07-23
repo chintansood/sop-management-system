@@ -9,8 +9,24 @@ import {
   listQuestionsHandler,
   reviewQuestionHandler,
 } from "./sop.controller";
+// Add these to your existing sop.routes.ts
 
+import {
+  publishNewVersionHandler,
+  getVersionHistoryHandler,
+  getStaleAssignmentsHandler,
+} from "./sop.controller";
 const router = Router();
+
+// New version of existing SOP
+router.post("/:sopId/versions", authenticate, authorize("ADMIN", "SUPER_ADMIN"), sopUpload.single("document"), publishNewVersionHandler);
+
+// Version history
+router.get("/:sopId/versions", authenticate, authorize("ADMIN", "SUPER_ADMIN"), getVersionHistoryHandler);
+
+// Staff — get their stale assignments
+router.get("/stale", authenticate, getStaleAssignmentsHandler);
+
 
 // All SOP management routes require authentication + admin role
 const adminOnly = [authenticate, authorize("SUPER_ADMIN", "ADMIN")];

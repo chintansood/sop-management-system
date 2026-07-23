@@ -8,6 +8,12 @@ import {
   TextExtractionError,
   AIGenerationError,
 } from "../ai-questions/ai.service";
+import {
+  publishNewVersion,
+  getVersionHistory,
+  getStaleAssignmentsForUser,
+  SOPNotFoundError,
+} from "./sop.versioning";
 
 // ---------------------------------------------------------------------------
 // Upload a new SOP (creates SOP + SOPVersion in one transaction)
@@ -270,4 +276,69 @@ export async function reviewQuestionHandler(req: Request, res: Response) {
     message: `Question ${action === "APPROVE" ? "approved" : "rejected"}`,
     question: updated,
   });
+}
+// ─── ADD THESE TO YOUR EXISTING sop.controller.ts ───────────────────────────
+// Add this import at the top of sop.controller.ts:
+//
+// import {
+//   publishNewVersion,
+//   getVersionHistory,
+//   getStaleAssignmentsForUser,
+//   VersionNotFoundError,
+//   SOPNotFoundError,
+// } from "./sop.versioning";
+
+// ---------------------------------------------------------------------------
+// POST /api/v1/sops/:sopId/versions
+// Admin uploads a new version of an existing SOP
+// ---------------------------------------------------------------------------
+export async function publishNewVersionHandler(req: Request, res: Response) {
+  const sopId = String(req.params.sopId);
+
+  if (!req.file) {
+    return res.status(400).json({ error: "No file uploaded" });
+  }
+
+  try {
+    const result = await publishNewVersion(
+      sopId,
+      req.file.path,
+      req.user!.userId
+    );
+    return res.status(201).json(result);
+  } catch (err) {
+    if (err instanceof SOPNotFoundError)
+      return res.status(404).json({ error: err.message });
+    throw err;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// GET /api/v1/sops/:sopId/versions
+// Returns version history for a SOP
+// ---------------------------------------------------------------------------
+export async function getVersionHistoryHandler(req: Request, res: Response) {
+  const sopId = String(req.params.sopId);
+
+  try {
+    const result = await getVersionHistory(sopId);
+    return res.status(200).json(result);
+  } catch (err) {
+    if (err instanceof SOPNotFoundError)
+      return res.status(404).json({ error: err.message });
+    throw err;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// GET /api/v1/sops/stale
+// Returns stale assignments for the logged in staff member
+// ---------------------------------------------------------------------------
+export async function getStaleAssignmentsHandler(req: Request, res: Response) {
+  try {
+    const result = await getStaleAssignmentsForUser(req.user!.userId);
+    return res.status(200).json({ stale: result, count: result.length });
+  } catch (err) {
+    throw err;
+  }
 }

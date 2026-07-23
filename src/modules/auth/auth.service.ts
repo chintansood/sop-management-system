@@ -16,7 +16,7 @@ if (!ACCESS_TOKEN_SECRET || !REFRESH_TOKEN_SECRET) {
   );
 }
 
-const ACCESS_TOKEN_EXPIRY = "15m";
+const ACCESS_TOKEN_EXPIRY = "2h";
 const REFRESH_TOKEN_EXPIRY = "7d";
 
 // What we encode inside the token. Deliberately minimal — only what's
