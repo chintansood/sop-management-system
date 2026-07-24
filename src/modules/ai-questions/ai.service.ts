@@ -95,7 +95,7 @@ export async function generateQuestionsForSOPVersion(
     const extractionResult = await extractTextFromFile(sopVersion.fileUrl);
 
     if (!extractionResult.ok) {
-      throw new TextExtractionError(extractionResult.message);
+      throw new TextExtractionError((extractionResult as any).message);
     }
 
     extractedText = extractionResult.text;
@@ -231,10 +231,10 @@ async function callGeminiWithRetry(
       const validation = validateAIResponse(parsed);
 
       if (!validation.success) {
-        lastErrors = validation.errors;
+        lastErrors = (validation as any).errors;
         console.warn(
           `AI generation attempt ${attempt} failed validation:`,
-          validation.errors
+          (validation as any).errors
         );
         continue; // retry
       }
