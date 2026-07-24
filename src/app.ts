@@ -13,7 +13,13 @@ import cors from "cors"
 
 // add right after const app = express()
 app.use(cors({
-  origin: ["http://localhost:3001", "http://localhost:3002"],
+  origin: [
+    "http://localhost:3001",
+    "http://localhost:3002",
+    "https://sop-frontend-admin.vercel.app",
+    "https://sop-frontend-staff.vercel.app",
+    /\.vercel\.app$/,
+  ],
   credentials: true,
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
