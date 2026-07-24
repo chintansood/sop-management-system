@@ -4,6 +4,10 @@ import {
   refreshHandler,
   createUserHandler,
   logoutHandler,
+  getAllUsersHandler,
+  registerHandler,
+  approveUserHandler,
+  deactivateUserHandler,
 } from "./auth.controller";
 import { authenticate } from "../../middleware/authenticate";
 import { authorize } from "../../middleware/authorize";
@@ -12,7 +16,6 @@ const router = Router();
 
 router.post("/login", loginHandler);
 router.post("/refresh", refreshHandler);
-import { getAllUsersHandler } from "./auth.controller"
 
 router.get("/users", authenticate, authorize("SUPER_ADMIN", "ADMIN"), getAllUsersHandler)
 
@@ -25,5 +28,12 @@ router.post(
 );
 
 router.post("/logout", authenticate, logoutHandler);
+
+// Public — staff self signup
+router.post("/register", registerHandler)
+
+// Admin — approve or deactivate users
+router.patch("/:userId/approve",    authenticate, authorize("SUPER_ADMIN", "ADMIN"), approveUserHandler)
+router.patch("/:userId/deactivate", authenticate, authorize("SUPER_ADMIN", "ADMIN"), deactivateUserHandler)
 
 export default router;

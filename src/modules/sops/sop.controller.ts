@@ -20,11 +20,9 @@ import {
 // ---------------------------------------------------------------------------
 
 export async function uploadSOPHandler(req: Request, res: Response) {
-  // req.file is set by multer middleware (registered on the route)
   if (!req.file) {
     return res.status(400).json({ error: "No file uploaded" });
   }
-
   const parsed = CreateSOPSchema.safeParse(req.body);
   if (!parsed.success) {
     return res.status(400).json({
@@ -32,16 +30,10 @@ export async function uploadSOPHandler(req: Request, res: Response) {
       details: parsed.error.issues.map((i: { message: string }) => i.message),
     });
   }
-
   const { title, category, applicableTo } = parsed.data;
-
-  // Store the file path relative to the project root — not the absolute
-  // OS path — so the path still works if the project moves directories
   const fileUrl = path.join("uploads", req.file.filename);
 
-  // Use a transaction so both the SOP row and the SOPVersion row are
-  // created atomically — if either fails, neither is saved.
-  const result = await prisma.$transaction(async (tx) => {
+  const { sop, sopVersion } = await prisma.$transaction(async (tx) => {
     const sop = await tx.sOP.create({
       data: {
         title,
@@ -50,7 +42,6 @@ export async function uploadSOPHandler(req: Request, res: Response) {
         createdById: req.user!.userId,
       },
     });
-
     const sopVersion = await tx.sOPVersion.create({
       data: {
         sopId: sop.id,
@@ -60,18 +51,29 @@ export async function uploadSOPHandler(req: Request, res: Response) {
         status: "DRAFT",
       },
     });
-
     return { sop, sopVersion };
   });
 
+  // Set activeVersionId so assignments can be created
+  await prisma.sOP.update({
+    where: { id: sop.id },
+    data: { activeVersionId: sopVersion.id },
+  });
+
+  // Auto-generate questions in background
+  generateQuestionsForSOPVersion(sopVersion.id, 5).catch((err) => {
+    console.error("Auto question generation failed:", err.message);
+  });
+
   return res.status(201).json({
-    message: "SOP uploaded successfully",
-    sopId: result.sop.id,
-    sopVersionId: result.sopVersion.id,
-    versionNumber: result.sopVersion.versionNumber,
-    status: result.sopVersion.status,
+    message: "SOP uploaded successfully. Questions are being generated.",
+    sopId: sop.id,
+    sopVersionId: sopVersion.id,
+    versionNumber: sopVersion.versionNumber,
+    status: sopVersion.status,
   });
 }
+
 
 // ---------------------------------------------------------------------------
 // Upload a new version of an existing SOP

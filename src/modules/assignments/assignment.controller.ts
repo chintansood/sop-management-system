@@ -6,6 +6,7 @@ import {
   getAllAssignments,
   SOPNotFoundError,
   NoTargetUsersError,
+  resetAttempts,
 } from "./assignment.service";
 
 // ---------------------------------------------------------------------------
@@ -63,4 +64,16 @@ export async function getAllAssignmentsHandler(req: Request, res: Response) {
   });
 
   return res.status(200).json({ assignments });
+}
+export async function resetAttemptsHandler(req: Request, res: Response) {
+  const assignmentId = Array.isArray(req.params.assignmentId)
+    ? req.params.assignmentId[0]
+    : req.params.assignmentId
+
+  try {
+    const result = await resetAttempts(assignmentId)
+    return res.status(200).json(result)
+  } catch (err) {
+    throw err
+  }
 }

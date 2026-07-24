@@ -140,3 +140,58 @@ export async function refreshAccessToken(refreshToken: string): Promise<string> 
 
   return issueAccessToken({ userId: user.id, role: user.role });
 }
+// ---------------------------------------------------------------------------
+// REGISTER — staff self signup (account inactive until admin approves)
+// ---------------------------------------------------------------------------
+export async function register(input: {
+  fullName: string
+  email: string
+  password: string
+  role: string
+}) {
+  const existing = await prisma.user.findUnique({ where: { email: input.email } })
+  if (existing) throw new Error("Email already registered")
+
+  const passwordHash = await hashPassword(input.password)
+
+  const user = await prisma.user.create({
+    data: {
+      fullName:     input.fullName,
+      email:        input.email,
+      passwordHash,
+      role:         input.role as any,
+      isActive:     false, // must be approved by admin
+    },
+    select: { id: true, fullName: true, email: true, role: true, isActive: true },
+  })
+
+  return user
+}
+
+// ---------------------------------------------------------------------------
+// APPROVE USER — admin activates a pending account
+// ---------------------------------------------------------------------------
+export async function approveUser(userId: string) {
+  const user = await prisma.user.findUnique({ where: { id: userId } })
+  if (!user) throw new Error("User not found")
+
+  return prisma.user.update({
+    where: { id: userId },
+    data:  { isActive: true },
+    select: { id: true, fullName: true, email: true, role: true, isActive: true },
+  })
+}
+
+// ---------------------------------------------------------------------------
+// DEACTIVATE USER — admin deactivates an account
+// ---------------------------------------------------------------------------
+export async function deactivateUser(userId: string) {
+  const user = await prisma.user.findUnique({ where: { id: userId } })
+  if (!user) throw new Error("User not found")
+
+  return prisma.user.update({
+    where: { id: userId },
+    data:  { isActive: false },
+    select: { id: true, fullName: true, email: true, role: true, isActive: true },
+  })
+}

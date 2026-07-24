@@ -5,6 +5,7 @@ import {
   createAssignmentHandler,
   getMyAssignmentsHandler,
   getAllAssignmentsHandler,
+  resetAttemptsHandler,
 } from "./assignment.controller";
 
 const router = Router();
@@ -26,6 +27,14 @@ router.post(
   authenticate,
   authorize("SUPER_ADMIN", "ADMIN"),
   createAssignmentHandler
+);
+
+// Admin: reset attempts for an assignment
+router.post(
+  "/:assignmentId/reset",
+  authenticate,
+  authorize("ADMIN", "SUPER_ADMIN"),
+  resetAttemptsHandler
 );
 
 export default router;

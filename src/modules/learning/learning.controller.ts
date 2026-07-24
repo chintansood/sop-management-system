@@ -204,7 +204,7 @@ export async function getLearningStatusHandler(req: Request, res: Response) {
     where: { id: assignmentId },
     include: {
       sop: { select: { title: true, category: true } },
-      sopVersion: { select: { versionNumber: true } },
+     sopVersion: { select: { versionNumber: true, extractedText: true } },
     },
   });
 
@@ -236,7 +236,7 @@ export async function getLearningStatusHandler(req: Request, res: Response) {
     },
   });
 
-  return res.status(200).json({
+ return res.status(200).json({
     assignment: {
       id: assignment.id,
       status: assignment.status,
@@ -244,6 +244,8 @@ export async function getLearningStatusHandler(req: Request, res: Response) {
       sop: assignment.sop,
       sopVersion: assignment.sopVersion,
     },
+    extractedText: assignment.sopVersion.extractedText ?? null,
+
     learning: {
       opened: !!progress?.openedAt,
       openedAt: progress?.openedAt ?? null,

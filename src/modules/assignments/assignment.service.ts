@@ -163,6 +163,17 @@ export async function getMyAssignments(userId: string) {
       sopVersion: {
         select: { versionNumber: true, status: true },
       },
+      attempts: {
+        orderBy: { attemptNumber: "asc" as const },
+        select: {
+          id: true,
+          attemptNumber: true,
+          score: true,
+          passed: true,
+          startedAt: true,
+          submittedAt: true,
+        },
+      },
     },
     orderBy: [{ status: "asc" }, { dueDate: "asc" }],
   });
@@ -201,4 +212,27 @@ export async function getAllAssignments(filters: {
     },
     orderBy: { createdAt: "desc" },
   });
+}
+export async function resetAttempts(assignmentId: string) {
+  const attempts = await prisma.attempt.findMany({
+    where: { assignmentId },
+    select: { id: true },
+  })
+
+  const attemptIds = attempts.map(a => a.id)
+
+  await prisma.$transaction([
+    prisma.attemptAnswer.deleteMany({
+      where: { attemptId: { in: attemptIds } },
+    }),
+    prisma.attempt.deleteMany({
+      where: { assignmentId },
+    }),
+    prisma.assignment.update({
+      where: { id: assignmentId },
+      data: { status: "NOT_STARTED" },
+    }),
+  ])
+
+  return { message: "Attempts reset successfully. Staff can retake the assessment." }
 }
