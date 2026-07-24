@@ -20,6 +20,8 @@ app.use(cors({
     "https://sop-frontend-staff.vercel.app",
     "https://sop-frontend-staff-henna.vercel.app",
     /\.vercel\.app$/,
+    "https://sop-frontend-three.vercel.app",
+    "https://sop-frontend-staff-henna.vercel.app",
   ],
   credentials: true,
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
