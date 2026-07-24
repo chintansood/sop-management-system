@@ -18,6 +18,7 @@ app.use(cors({
     "http://localhost:3002",
     "https://sop-frontend-admin.vercel.app",
     "https://sop-frontend-staff.vercel.app",
+    "https://sop-frontend-staff-henna.vercel.app",
     /\.vercel\.app$/,
   ],
   credentials: true,
