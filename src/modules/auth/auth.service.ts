@@ -71,7 +71,7 @@ export function verifyRefreshToken(token: string): TokenPayload {
 // ---------------------------------------------------------------------------
 
 export interface LoginResult {
-  user: Pick<User, "id" | "fullName" | "email" | "role">;
+  user: Pick<User, "id" | "fullName" | "email" | "role" | "schoolName">;
   accessToken: string;
   refreshToken: string;
 }
@@ -118,6 +118,7 @@ export async function login(
       fullName: user.fullName,
       email: user.email,
       role: user.role,
+      schoolName: user.schoolName,
     },
     accessToken: issueAccessToken(payload),
     refreshToken: issueRefreshToken(payload),
@@ -193,5 +194,16 @@ export async function deactivateUser(userId: string) {
     where: { id: userId },
     data:  { isActive: false },
     select: { id: true, fullName: true, email: true, role: true, isActive: true },
+  })
+}
+
+// ---------------------------------------------------------------------------
+// UPDATE SCHOOL NAME
+// ---------------------------------------------------------------------------
+export async function updateSchoolName(userId: string, schoolName: string) {
+  return prisma.user.update({
+    where: { id: userId },
+    data: { schoolName },
+    select: { id: true, schoolName: true },
   })
 }

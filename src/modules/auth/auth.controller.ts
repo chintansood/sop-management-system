@@ -13,6 +13,7 @@ import {
   register,
   approveUser,
   deactivateUser,
+  updateSchoolName,
 } from "./auth.service";
 import { prisma } from "../../lib/db";
 
@@ -164,4 +165,11 @@ export async function deactivateUserHandler(req: Request, res: Response) {
   } catch (err: any) {
     return res.status(404).json({ error: err.message })
   }
+}
+
+export async function updateSchoolNameHandler(req: Request, res: Response) {
+  const { schoolName } = req.body
+  if (!schoolName) return res.status(400).json({ error: "schoolName is required" })
+  const result = await updateSchoolName(req.user!.userId, schoolName)
+  return res.status(200).json(result)
 }

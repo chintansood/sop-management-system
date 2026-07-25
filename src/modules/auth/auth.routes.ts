@@ -8,6 +8,7 @@ import {
   registerHandler,
   approveUserHandler,
   deactivateUserHandler,
+  updateSchoolNameHandler,
 } from "./auth.controller";
 import { authenticate } from "../../middleware/authenticate";
 import { authorize } from "../../middleware/authorize";
@@ -35,5 +36,7 @@ router.post("/register", registerHandler)
 // Admin — approve or deactivate users
 router.patch("/:userId/approve",    authenticate, authorize("SUPER_ADMIN", "ADMIN"), approveUserHandler)
 router.patch("/:userId/deactivate", authenticate, authorize("SUPER_ADMIN", "ADMIN"), deactivateUserHandler)
+
+router.patch("/school-name", authenticate, updateSchoolNameHandler)
 
 export default router;
