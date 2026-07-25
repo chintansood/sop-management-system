@@ -138,9 +138,23 @@ export async function registerHandler(req: Request, res: Response) {
   }
   try {
     const user = await register({ fullName, email, password, role: role ?? "TEACHING_STAFF", schoolName })
+    const isAdminRole = ["ADMIN", "SUPER_ADMIN"].includes(user.role as string)
+
+    // Auto-login for admin accounts — return token directly
+    if (isAdminRole && user.isActive) {
+      const tokens = await login(email, password)
+      return res.status(201).json({
+        message: "Account created successfully.",
+        user: tokens.user,
+        accessToken: tokens.accessToken,
+        refreshToken: tokens.refreshToken,
+      })
+    }
+
     return res.status(201).json({
       message: "Registration successful. Waiting for admin approval.",
       user,
+      accessToken: null,
     })
   } catch (err: any) {
     return res.status(400).json({ error: err.message })
