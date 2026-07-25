@@ -172,6 +172,30 @@ export async function registerHandler(req: Request, res: Response) {
   }
 }
 
+export async function getPendingUsersHandler(req: Request, res: Response) {
+  const admin = await prisma.user.findUnique({
+    where: { id: req.user!.userId },
+    select: { schoolName: true },
+  })
+
+  const users = await prisma.user.findMany({
+    where: {
+      schoolName: admin?.schoolName ?? "My School",
+      isActive: false,
+    },
+    select: {
+      id:        true,
+      fullName:  true,
+      email:     true,
+      role:      true,
+      isActive:  true,
+      createdAt: true,
+    },
+    orderBy: { createdAt: "desc" },
+  })
+  return res.status(200).json({ users })
+}
+
 export async function approveUserHandler(req: Request, res: Response) {
   const userId = String(req.params.userId)
   try {

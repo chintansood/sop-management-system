@@ -9,6 +9,7 @@ import {
   approveUserHandler,
   deactivateUserHandler,
   updateSchoolNameHandler,
+  getPendingUsersHandler,
 } from "./auth.controller";
 import { authenticate } from "../../middleware/authenticate";
 import { authorize } from "../../middleware/authorize";
@@ -19,6 +20,7 @@ router.post("/login", loginHandler);
 router.post("/refresh", refreshHandler);
 
 router.get("/users", authenticate, authorize("SUPER_ADMIN", "ADMIN"), getAllUsersHandler)
+router.get("/users/pending", authenticate, authorize("SUPER_ADMIN", "ADMIN"), getPendingUsersHandler)
 
 
 router.post(
