@@ -117,7 +117,17 @@ export async function logoutHandler(req: Request, res: Response) {
 }
 // GET /api/v1/auth/users — list all users (admin only)
 export async function getAllUsersHandler(req: Request, res: Response) {
+  // Get the requesting admin's schoolName and filter by it
+  const admin = await prisma.user.findUnique({
+    where: { id: req.user!.userId },
+    select: { schoolName: true },
+  })
+
   const users = await prisma.user.findMany({
+    where: {
+      schoolName: admin?.schoolName ?? "My School",
+      id: { not: req.user!.userId }, // exclude self
+    },
     select: {
       id:        true,
       fullName:  true,
