@@ -23,7 +23,7 @@ app.use(cors({
     "https://sop-frontend-three.vercel.app",
     "https://sop-frontend-staff-henna.vercel.app",
   ],
-  credentials: true,
+  credentials: false,
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
 }))
