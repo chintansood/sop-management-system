@@ -346,7 +346,17 @@ export async function getStaleAssignmentsHandler(req: Request, res: Response) {
 }
 // GET /api/v1/sops — list all SOPs
 export async function getAllSOPsHandler(req: Request, res: Response) {
+  // Filter SOPs by admin's schoolName
+  const admin = await prisma.user.findUnique({
+    where: { id: req.user!.userId },
+    select: { schoolName: true },
+  });
+  const schoolName = admin?.schoolName ?? "My School";
+  const schoolUsers = await prisma.user.findMany({ where: { schoolName }, select: { id: true } });
+  const schoolUserIds = schoolUsers.map((u) => u.id);
+
   const sops = await prisma.sOP.findMany({
+    where: schoolUserIds.length > 0 ? { createdById: { in: schoolUserIds } } : {},
     include: {
       activeVersion: {
         select: {

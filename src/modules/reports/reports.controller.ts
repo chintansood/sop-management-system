@@ -14,7 +14,7 @@ import {
 // ---------------------------------------------------------------------------
 export async function getOverviewHandler(req: Request, res: Response) {
   try {
-    const data = await getOverview();
+    const data = await getOverview(req.user!.userId);
     return res.status(200).json(data);
   } catch (err) {
     throw err;

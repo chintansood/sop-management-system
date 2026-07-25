@@ -187,11 +187,29 @@ export async function getAllAssignments(filters: {
   sopId?: string;
   departmentId?: string;
   status?: string;
+  adminId?: string;
 }) {
-  const { sopId, departmentId, status } = filters;
+  const { sopId, departmentId, status, adminId } = filters;
+
+  let schoolUserIds: string[] = []
+  if (adminId) {
+    const admin = await prisma.user.findUnique({
+      where: { id: adminId },
+      select: { departmentId: true },
+    })
+
+    if (admin?.departmentId) {
+      const departmentUsers = await prisma.user.findMany({
+        where: { departmentId: admin.departmentId },
+        select: { id: true },
+      })
+      schoolUserIds = departmentUsers.map((u) => u.id)
+    }
+  }
 
   return prisma.assignment.findMany({
     where: {
+      ...(schoolUserIds.length > 0 ? { userId: { in: schoolUserIds } } : {}),
       ...(sopId ? { sopId } : {}),
       ...(status ? { status: status as never } : {}),
       ...(departmentId

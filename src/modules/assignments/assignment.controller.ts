@@ -58,6 +58,7 @@ export async function getAllAssignmentsHandler(req: Request, res: Response) {
   const { sopId, departmentId, status } = req.query;
 
   const assignments = await getAllAssignments({
+    adminId: req.user!.userId,
     ...(sopId && { sopId: sopId as string }),
     ...(departmentId && { departmentId: departmentId as string }),
     ...(status && { status: status as string }),

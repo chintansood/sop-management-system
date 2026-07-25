@@ -3,22 +3,31 @@ import { prisma } from "../../lib/db";
 // ---------------------------------------------------------------------------
 // 1. OVERVIEW — powers the 3 stat cards on the admin dashboard
 // ---------------------------------------------------------------------------
-export async function getOverview() {
+export async function getOverview(adminId: string) {
   const now = new Date();
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
+  // Get admin's school
+  const admin = await prisma.user.findUnique({ where: { id: adminId }, select: { schoolName: true } })
+  const schoolName = admin?.schoolName ?? "My School"
+
+  // Get all user IDs in this school
+  const schoolUsers = await prisma.user.findMany({ where: { schoolName }, select: { id: true } })
+  const schoolUserIds = schoolUsers.map(u => u.id)
+
   const totalAssignments = await prisma.assignment.count({
-    where: { status: { not: "STALE" } },
+    where: { status: { not: "STALE" }, userId: { in: schoolUserIds } },
   });
 
   const passedAssignments = await prisma.assignment.count({
-    where: { status: "PASSED" },
+    where: { status: "PASSED", userId: { in: schoolUserIds } },
   });
 
   const overdueAssignments = await prisma.assignment.count({
     where: {
       dueDate: { lt: now },
       status: { notIn: ["PASSED", "STALE"] },
+      userId: { in: schoolUserIds },
     },
   });
 
@@ -26,6 +35,7 @@ export async function getOverview() {
     where: {
       passed: true,
       submittedAt: { gte: startOfMonth },
+      assignment: { userId: { in: schoolUserIds } },
     },
   });
 
