@@ -149,11 +149,15 @@ export async function register(input: {
   email: string
   password: string
   role: string
+  schoolName?: string
 }) {
   const existing = await prisma.user.findUnique({ where: { email: input.email } })
   if (existing) throw new Error("Email already registered")
 
   const passwordHash = await hashPassword(input.password)
+
+  // Admin accounts are auto-approved, staff need admin approval
+  const isAdmin = ["ADMIN", "SUPER_ADMIN"].includes(input.role)
 
   const user = await prisma.user.create({
     data: {
@@ -161,7 +165,8 @@ export async function register(input: {
       email:        input.email,
       passwordHash,
       role:         input.role as any,
-      isActive:     false, // must be approved by admin
+      isActive:     isAdmin, // admins auto-approved, staff need approval
+      schoolName:   input.schoolName ?? "My School",
     },
     select: { id: true, fullName: true, email: true, role: true, isActive: true },
   })

@@ -132,12 +132,12 @@ export async function getAllUsersHandler(req: Request, res: Response) {
   return res.status(200).json({ users })
 }
 export async function registerHandler(req: Request, res: Response) {
-  const { fullName, email, password, role } = req.body
+  const { fullName, email, password, role, schoolName } = req.body
   if (!fullName || !email || !password) {
     return res.status(400).json({ error: "fullName, email and password are required" })
   }
   try {
-    const user = await register({ fullName, email, password, role: role ?? "TEACHING_STAFF" })
+    const user = await register({ fullName, email, password, role: role ?? "TEACHING_STAFF", schoolName })
     return res.status(201).json({
       message: "Registration successful. Waiting for admin approval.",
       user,
