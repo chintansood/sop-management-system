@@ -64,13 +64,15 @@ export async function publishNewVersion(
       data:  { activeVersionId: newVersion.id },
     });
 
-    // Update PASSED assignments to point to new version — reset to NOT_STARTED
-    // This way staff see ONE assignment (updated) not two (old STALE + new)
+    // Update PASSED and IN_PROGRESS assignments to new version — reset to NOT_STARTED
+    // PASSED: must re-read updated procedure
+    // IN_PROGRESS: half-reading old version is dangerous — start fresh on v2
+    // NOT_STARTED: leave them — they haven't started, will get v2 on next assign
     const thirtyDaysFromNow = new Date();
     thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
 
     const staleResult = await tx.assignment.updateMany({
-      where: { sopId, status: "PASSED" },
+      where: { sopId, status: { in: ["PASSED", "IN_PROGRESS"] } },
       data:  {
         status:       "NOT_STARTED",
         sopVersionId: newVersion.id,
