@@ -307,6 +307,24 @@ export async function publishNewVersionHandler(req: Request, res: Response) {
       req.file.path,
       req.user!.userId
     );
+
+    // Auto-generate and auto-approve questions for new version
+    try {
+      await generateQuestionsForSOPVersion(result.newVersionId, 5)
+      // Auto-approve all generated questions
+      await prisma.question.updateMany({
+        where: { sopVersionId: result.newVersionId, status: "DRAFT" },
+        data: { status: "APPROVED" }
+      })
+      // Update version status
+      await prisma.sOPVersion.update({
+        where: { id: result.newVersionId },
+        data: { status: "QUESTIONS_APPROVED" }
+      })
+    } catch (err) {
+      console.error("Auto question generation failed for new version:", err)
+    }
+
     return res.status(201).json(result);
   } catch (err) {
     if (err instanceof SOPNotFoundError)
