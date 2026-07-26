@@ -195,16 +195,13 @@ export async function getAllAssignments(filters: {
   if (adminId) {
     const admin = await prisma.user.findUnique({
       where: { id: adminId },
-      select: { departmentId: true },
+      select: { schoolName: true },
     })
-
-    if (admin?.departmentId) {
-      const departmentUsers = await prisma.user.findMany({
-        where: { departmentId: admin.departmentId },
-        select: { id: true },
-      })
-      schoolUserIds = departmentUsers.map((u) => u.id)
-    }
+    const schoolUsers = await prisma.user.findMany({
+      where: { schoolName: admin?.schoolName ?? "My School" },
+      select: { id: true },
+    })
+    schoolUserIds = schoolUsers.map((u) => u.id)
   }
 
   return prisma.assignment.findMany({
