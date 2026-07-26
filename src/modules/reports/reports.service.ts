@@ -96,8 +96,10 @@ export async function getComplianceBySOP() {
 // ---------------------------------------------------------------------------
 // 3. BY DEPARTMENT — queries assignments directly, avoids User relation issues
 // ---------------------------------------------------------------------------
-export async function getComplianceByDepartment() {
+export async function getComplianceByDepartment(adminId: string) {
   const now = new Date();
+  const adminUser = await prisma.user.findUnique({ where: { id: adminId }, select: { schoolName: true } })
+  const schoolName = adminUser?.schoolName ?? "My School"
 
   const departments = await prisma.department.findMany();
 
