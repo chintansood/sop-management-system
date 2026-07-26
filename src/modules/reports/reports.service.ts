@@ -105,7 +105,7 @@ export async function getComplianceByDepartment() {
     departments.map(async (dept) => {
       // Get all user IDs in this department
       const users = await prisma.user.findMany({
-        where: { departmentId: dept.id },
+        where: { departmentId: dept.id, schoolName },
         select: { id: true },
       });
 

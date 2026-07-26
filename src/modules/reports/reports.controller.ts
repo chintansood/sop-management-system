@@ -27,7 +27,7 @@ export async function getOverviewHandler(req: Request, res: Response) {
 // ---------------------------------------------------------------------------
 export async function getBySopHandler(req: Request, res: Response) {
   try {
-    const data = await getComplianceBySOP();
+    const data = await getComplianceBySOP(req.user!.userId);
     return res.status(200).json({ sops: data });
   } catch (err) {
     throw err;
@@ -40,7 +40,7 @@ export async function getBySopHandler(req: Request, res: Response) {
 // ---------------------------------------------------------------------------
 export async function getByDepartmentHandler(req: Request, res: Response) {
   try {
-    const data = await getComplianceByDepartment();
+    const data = await getComplianceByDepartment(req.user!.userId);
     return res.status(200).json({ departments: data });
   } catch (err) {
     throw err;
