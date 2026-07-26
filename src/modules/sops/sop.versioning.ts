@@ -64,28 +64,21 @@ export async function publishNewVersion(
       data:  { activeVersionId: newVersion.id },
     });
 
-    // Mark all PASSED assignments as STALE
-    const staleResult = await tx.assignment.updateMany({
-      where: { sopId, status: "PASSED" },
-      data:  { status: "STALE" },
-    });
-
-    // Re-assign all affected staff to new version
+    // Update PASSED assignments to point to new version — reset to NOT_STARTED
+    // This way staff see ONE assignment (updated) not two (old STALE + new)
     const thirtyDaysFromNow = new Date();
     thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
 
-    const newAssignments = passedAssignments.length > 0
-      ? await tx.assignment.createMany({
-          data: passedAssignments.map((a) => ({
-            userId:       a.userId,
-            sopId,
-            sopVersionId: newVersion.id,
-            assignedById: adminId,
-            dueDate:      thirtyDaysFromNow,
-            status:       "NOT_STARTED",
-          })),
-        })
-      : { count: 0 };
+    const staleResult = await tx.assignment.updateMany({
+      where: { sopId, status: "PASSED" },
+      data:  {
+        status:       "NOT_STARTED",
+        sopVersionId: newVersion.id,
+        dueDate:      thirtyDaysFromNow,
+      },
+    });
+
+    const newAssignments = { count: 0 };
 
     return {
       newVersion,
