@@ -56,10 +56,15 @@ export async function getOverview(adminId: string) {
 // ---------------------------------------------------------------------------
 // 2. BY SOP — powers the compliance report table
 // ---------------------------------------------------------------------------
-export async function getComplianceBySOP() {
+export async function getComplianceBySOP(adminId: string) {
   const now = new Date();
+  const adminUser = await prisma.user.findUnique({ where: { id: adminId }, select: { schoolName: true } })
+  const schoolName = adminUser?.schoolName ?? "My School"
+  const schoolUsers = await prisma.user.findMany({ where: { schoolName }, select: { id: true } })
+  const schoolUserIds = schoolUsers.map(u => u.id)
 
   const sops = await prisma.sOP.findMany({
+    where: { createdById: { in: schoolUserIds } },
     include: {
       versions: {
         include: {
