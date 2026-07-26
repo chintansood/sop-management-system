@@ -10,6 +10,7 @@ import {
   deactivateUserHandler,
   updateSchoolNameHandler,
   getPendingUsersHandler,
+  getMeHandler,
 } from "./auth.controller";
 import { authenticate } from "../../middleware/authenticate";
 import { authorize } from "../../middleware/authorize";
@@ -40,5 +41,7 @@ router.patch("/:userId/approve",    authenticate, authorize("SUPER_ADMIN", "ADMI
 router.patch("/:userId/deactivate", authenticate, authorize("SUPER_ADMIN", "ADMIN"), deactivateUserHandler)
 
 router.patch("/school-name", authenticate, updateSchoolNameHandler)
+
+router.get("/me", authenticate, getMeHandler)
 
 export default router;

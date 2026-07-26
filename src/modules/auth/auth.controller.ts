@@ -222,3 +222,12 @@ export async function updateSchoolNameHandler(req: Request, res: Response) {
   const result = await updateSchoolName(req.user!.userId, schoolName)
   return res.status(200).json(result)
 }
+
+export async function getMeHandler(req: Request, res: Response) {
+  const user = await prisma.user.findUnique({
+    where: { id: req.user!.userId },
+    select: { id: true, fullName: true, email: true, role: true, schoolName: true },
+  })
+  if (!user) return res.status(404).json({ error: "User not found" })
+  return res.status(200).json(user)
+}
