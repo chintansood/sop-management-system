@@ -72,7 +72,7 @@ export async function publishNewVersion(
     thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
 
     const staleResult = await tx.assignment.updateMany({
-      where: { sopId, status: { in: ["PASSED", "IN_PROGRESS"] } },
+      where: { sopId, status: { in: ["PASSED", "IN_PROGRESS", "FAILED"] } },
       data:  {
         status:       "NOT_STARTED",
         sopVersionId: newVersion.id,
