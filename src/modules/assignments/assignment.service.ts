@@ -55,28 +55,32 @@ export async function createAssignments(
   }
 
   // ── Step 2: Resolve target users ─────────────────────────────────────
-  // Build a where clause based on which targeting option was provided.
-  // The result is always the same: a flat list of user IDs to assign to.
+  const admin = await prisma.user.findUnique({
+    where: { id: assignedById },
+    select: { schoolName: true },
+  });
+  const schoolName = admin?.schoolName ?? "My School";
+
   let targetUserIds: string[] = [];
 
   if (userIds && userIds.length > 0) {
-    // Direct user assignment — verify all provided IDs actually exist
+    // Direct user assignment — verify all provided IDs belong to same school
     const users = await prisma.user.findMany({
-      where: { id: { in: userIds }, isActive: true },
+      where: { id: { in: userIds }, isActive: true, schoolName },
       select: { id: true },
     });
     targetUserIds = users.map((u) => u.id);
   } else if (departmentId) {
-    // All active users in a department
+    // All active users in department within this school
     const users = await prisma.user.findMany({
-      where: { departmentId, isActive: true },
+      where: { departmentId, isActive: true, schoolName },
       select: { id: true },
     });
     targetUserIds = users.map((u) => u.id);
   } else if (role) {
-    // All active users with a specific role
+    // All active users with a specific role within this school
     const users = await prisma.user.findMany({
-      where: { role, isActive: true },
+      where: { role, isActive: true, schoolName },
       select: { id: true },
     });
     targetUserIds = users.map((u) => u.id);

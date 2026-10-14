@@ -69,7 +69,7 @@ export async function getStaffComplianceHandler(req: Request, res: Response) {
 // ---------------------------------------------------------------------------
 export async function getOverdueHandler(req: Request, res: Response) {
   try {
-    const data = await getOverdueAssignments();
+    const data = await getOverdueAssignments(req.user!.userId);
     return res.status(200).json({ overdue: data, count: data.length });
   } catch (err) {
     throw err;

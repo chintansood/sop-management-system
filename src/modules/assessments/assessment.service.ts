@@ -116,6 +116,28 @@ export async function startAttempt(assignmentId: string, userId: string) {
     where: { assignmentId },
   });
 
+  if (assignment.status === "PASSED") {
+    throw new Error("You have already passed this assessment.");
+  }
+
+  // Check if there is an active unsubmitted attempt (prevents duplicate attempts on re-renders)
+  const existingAttempt = await prisma.attempt.findFirst({
+    where: { assignmentId, submittedAt: null },
+    orderBy: { startedAt: "desc" },
+  });
+
+  if (existingAttempt) {
+    const snapshot = existingAttempt.questionSnapshot as unknown as SnapshotQuestion[];
+    return {
+      attemptId: existingAttempt.id,
+      attemptNumber: existingAttempt.attemptNumber,
+      totalQuestions: snapshot.length,
+      passPercentage: PASS_PERCENTAGE,
+      questions: snapshot.map(({ correctOptionId, explanation, ...q }) => q),
+      startedAt: existingAttempt.startedAt,
+    };
+  }
+
   if (attemptCount >= MAX_ATTEMPTS) {
     throw new MaxAttemptsReachedError();
   }
@@ -340,7 +362,8 @@ export async function getAttemptResult(attemptId: string, userId: string) {
       questionText: snapshotQ?.text ?? "Question not found",
       selectedOptionId: answer.selectedOptionId,
       isCorrect: answer.isCorrect,
-      explanation: !answer.isCorrect ? snapshotQ?.explanation : null,
+      correctOptionId: snapshotQ?.correctOptionId,
+      explanation: snapshotQ?.explanation ?? null,
       options: snapshotQ?.options ?? [],
     };
   });

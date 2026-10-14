@@ -230,13 +230,23 @@ export async function getStaffCompliance(userId: string) {
 // ---------------------------------------------------------------------------
 // 5. OVERDUE LIST — all overdue assignments with staff details
 // ---------------------------------------------------------------------------
-export async function getOverdueAssignments() {
+export async function getOverdueAssignments(adminId?: string) {
   const now = new Date();
+  let schoolName: string | undefined;
+
+  if (adminId) {
+    const admin = await prisma.user.findUnique({
+      where: { id: adminId },
+      select: { schoolName: true },
+    });
+    schoolName = admin?.schoolName ?? "My School";
+  }
 
   const overdue = await prisma.assignment.findMany({
     where: {
       dueDate: { lt: now },
       status:  { notIn: ["PASSED", "STALE"] },
+      ...(schoolName ? { user: { schoolName } } : {}),
     },
     include: {
       user: { select: { id: true, fullName: true, email: true, role: true } },
